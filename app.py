@@ -6,7 +6,9 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from models import db
 from models.user import User
 from routes.product import product_bp
+from routes.dashboard_routes import dashboard_bp  # 👈 Import do dashboard
 from config import Config
+
 
 def create_app():
     app = Flask(__name__)
@@ -18,13 +20,16 @@ def create_app():
     CORS(app)
     JWTManager(app)
 
-    # Registra Blueprint de produtos
+    # Registra Blueprints
     app.register_blueprint(product_bp)
+    app.register_blueprint(dashboard_bp)  # 👈 Registro do blueprint do dashboard
 
+    # Rota raiz (teste rápido)
     @app.route('/')
     def home():
         return jsonify({"msg": "API Cannoli Dashboard rodando 🎉"})
 
+    # Rota de registro
     @app.route('/register', methods=['POST'])
     def register():
         data = request.get_json() or {}
@@ -39,6 +44,7 @@ def create_app():
         db.session.commit()
         return jsonify({"msg": "Usuário criado com sucesso"}), 201
 
+    # Rota de login
     @app.route('/login', methods=['POST'])
     def login():
         data = request.get_json() or {}
@@ -53,18 +59,23 @@ def create_app():
         access_token = create_access_token(identity=user_identity)
         return jsonify(access_token=access_token), 200
 
+    # Rota protegida para testes
     @app.route('/protected', methods=['GET'])
     @jwt_required()
     def protected():
         current_user = json.loads(get_jwt_identity())
         return jsonify(logged_in_as=current_user), 200
 
+    # Cria todas as tabelas no banco
     with app.app_context():
-        db.create_all()  # cria todas as tabelas
+        db.create_all()
 
     return app
 
+
+# Inicializa o app Flask
 app = create_app()
 
 if __name__ == '__main__':
     app.run(debug=True)
+
